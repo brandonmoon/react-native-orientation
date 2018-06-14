@@ -20,47 +20,59 @@ function getKey(listener) {
   }
 
   return listener[META];
-};
+}
 
 module.exports = {
   getOrientation(cb) {
-    Orientation.getOrientation((error,orientation) =>{
+    Orientation.getOrientation((error, orientation) => {
       cb(error, orientation);
     });
   },
 
   getSpecificOrientation(cb) {
-    Orientation.getSpecificOrientation((error,orientation) =>{
+    Orientation.getSpecificOrientation((error, orientation) => {
       cb(error, orientation);
     });
   },
 
   lockToPortrait() {
+    this._isLocked = true;
     Orientation.lockToPortrait();
   },
 
   lockToLandscape() {
+    // this._isLocked = true; // Not actually true, since here we allow both landscape orientations
     Orientation.lockToLandscape();
   },
 
   lockToLandscapeRight() {
+    this._isLocked = true;
     Orientation.lockToLandscapeRight();
   },
 
   lockToLandscapeLeft() {
+    this._isLocked = true;
     Orientation.lockToLandscapeLeft();
   },
 
+  lockToPortraitUpsideDown() {
+    this._isLocked = true;
+    Orientation.lockToPortraitUpsideDown();
+  },
+
   unlockAllOrientations() {
+    this._isLocked = false;
     Orientation.unlockAllOrientations();
   },
 
   addOrientationListener(cb) {
     var key = getKey(cb);
-    listeners[key] = DeviceEventEmitter.addListener(orientationDidChangeEvent,
-      (body) => {
-        cb(body.orientation);
-      });
+    listeners[key] = DeviceEventEmitter.addListener(
+      orientationDidChangeEvent,
+      body => {
+        if (!this._isLocked) cb(body.orientation);
+      }
+    );
   },
 
   removeOrientationListener(cb) {
@@ -77,10 +89,12 @@ module.exports = {
   addSpecificOrientationListener(cb) {
     var key = getKey(cb);
 
-    listeners[key] = DeviceEventEmitter.addListener(specificOrientationDidChangeEvent,
-      (body) => {
+    listeners[key] = DeviceEventEmitter.addListener(
+      specificOrientationDidChangeEvent,
+      body => {
         cb(body.specificOrientation);
-      });
+      }
+    );
   },
 
   removeSpecificOrientationListener(cb) {
@@ -96,5 +110,5 @@ module.exports = {
 
   getInitialOrientation() {
     return Orientation.initialOrientation;
-  }
-}
+  },
+};

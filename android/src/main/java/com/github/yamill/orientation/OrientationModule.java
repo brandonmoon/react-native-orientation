@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.util.Log;
+import android.view.Display;
+import android.view.WindowManager;
 
 import com.facebook.common.logging.FLog;
 import com.facebook.react.bridge.Arguments;
@@ -27,6 +29,11 @@ import javax.annotation.Nullable;
 
 public class OrientationModule extends ReactContextBaseJavaModule implements LifecycleEventListener{
     final BroadcastReceiver receiver;
+
+    private static final int ORIENTATION_0 = 0;
+    private static final int ORIENTATION_270 = 1;
+    private static final int ORIENTATION_180 = 2;
+    private static final int ORIENTATION_90 = 3;
 
     public OrientationModule(ReactApplicationContext reactContext) {
         super(reactContext);
@@ -71,6 +78,20 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
     }
 
     @ReactMethod
+    public void getSpecificOrientation(Callback callback) {
+        WindowManager windowManager = ((WindowManager)
+                getReactApplicationContext().getSystemService(Context.WINDOW_SERVICE));
+        if (windowManager == null) {
+            callback.invoke("No window manager", null);
+        }
+        Display display = windowManager.getDefaultDisplay();
+        int screenOrientation = display.getRotation();
+        String specifOrientationValue = getSpecificOrientationString(screenOrientation);
+
+        callback.invoke(null, specifOrientationValue);
+    }
+
+    @ReactMethod
     public void lockToPortrait() {
         final Activity activity = getCurrentActivity();
         if (activity == null) {
@@ -107,6 +128,15 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
     }
 
     @ReactMethod
+    public void lockToPortraitUpsideDown() {
+        final Activity activity = getCurrentActivity();
+        if (activity == null) {
+            return;
+        }
+        activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT);
+    }
+
+    @ReactMethod
     public void unlockAllOrientations() {
         final Activity activity = getCurrentActivity();
         if (activity == null) {
@@ -140,6 +170,29 @@ public class OrientationModule extends ReactContextBaseJavaModule implements Lif
         } else {
             return "null";
         }
+    }
+
+    private String getSpecificOrientationString(int screenOrientation) {
+        String specifOrientationValue;
+        switch (screenOrientation)
+        {
+            case ORIENTATION_0: // Portrait
+                specifOrientationValue = "PORTRAIT";
+                break;
+            case ORIENTATION_90: // Landscape right
+                specifOrientationValue = "LANDSCAPE-RIGHT";
+                break;
+            case ORIENTATION_180: // Portrait upside down
+                specifOrientationValue = "PORTRAITUPSIDEDOWN";
+                break;
+            case ORIENTATION_270: // Landscape left
+                specifOrientationValue = "LANDSCAPE-LEFT";
+                break;
+            default:
+                specifOrientationValue = "UNKNOWN";
+                break;
+        }
+        return specifOrientationValue;
     }
 
     @Override
